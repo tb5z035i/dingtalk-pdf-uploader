@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF to DingTalk Options</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <h1>PDF to DingTalk settings</h1>
+      <label class="field">
+        <span>Backend URL</span>
+        <input id="backend-url" type="url" placeholder="http://localhost:8787" />
+      </label>
+      <div class="actions">
+        <button id="load-button" type="button">Load workspaces</button>
+      </div>
+
+      <label class="field">
+        <span>Knowledge base</span>
+        <select id="workspace-select"></select>
+      </label>
+
+      <section class="panel">
+        <h2>Folder browser</h2>
+        <p id="current-folder" class="muted"></p>
+        <div class="actions">
+          <button id="back-button" type="button" class="secondary">Back</button>
+        </div>
+        <ul id="folder-list" class="folder-list"></ul>
+      </section>
+
+      <div id="status" class="status" data-tone="neutral"></div>
+      <div class="actions">
+        <button id="save-button" type="button">Save settings</button>
+      </div>
+    </main>
+    <script type="module" src="./options/index.js"></script>
+  </body>
+</html>

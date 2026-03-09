@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "chrome",
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}
