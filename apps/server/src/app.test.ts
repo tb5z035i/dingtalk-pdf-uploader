@@ -35,6 +35,12 @@ describe("createApp", () => {
     expect(response.body.items).toHaveLength(1);
   });
 
+  it("lists nodes under a parent folder", async () => {
+    const response = await request(app).get("/api/nodes").query({ parentNodeId: "node_root_001" });
+    expect(response.status).toBe(200);
+    expect(response.body.items).toHaveLength(2);
+  });
+
   it("rejects non-pdf uploads", async () => {
     const response = await request(app)
       .post("/api/upload")
