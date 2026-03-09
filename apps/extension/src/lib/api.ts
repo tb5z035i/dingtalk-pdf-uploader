@@ -1,23 +1,32 @@
-import type { ApiListResponse, KnowledgeNode, WorkspaceSummary } from "./types.js";
+import type { DingtalkCredentialDraft, DingtalkNodeRequest, DingtalkUploadResult, KnowledgeNode, WorkspaceSummary } from "./types.js";
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
+async function sendRuntimeMessage<T>(message: unknown): Promise<T> {
+  const response = await chrome.runtime.sendMessage(message) as { ok: boolean; payload?: T; message?: string };
   if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as { message?: string };
-    throw new Error(payload.message ?? `Request failed: ${response.status}`);
+    throw new Error(response.message ?? "Extension runtime request failed.");
   }
 
-  return response.json() as Promise<T>;
+  return response.payload as T;
 }
 
-export async function fetchWorkspaces(backendBaseUrl: string): Promise<WorkspaceSummary[]> {
-  const payload = await fetchJson<ApiListResponse<WorkspaceSummary>>(`${backendBaseUrl}/api/workspaces`);
-  return payload.items;
+export async function fetchWorkspaces(settings: DingtalkCredentialDraft): Promise<WorkspaceSummary[]> {
+  return sendRuntimeMessage<WorkspaceSummary[]>({
+    type: "listDingtalkWorkspaces",
+    settings
+  });
 }
 
-export async function fetchNodes(backendBaseUrl: string, parentNodeId: string): Promise<KnowledgeNode[]> {
-  const url = new URL(`${backendBaseUrl}/api/nodes`);
-  url.searchParams.set("parentNodeId", parentNodeId);
-  const payload = await fetchJson<ApiListResponse<KnowledgeNode>>(url.toString());
-  return payload.items;
+export async function fetchNodes(request: DingtalkNodeRequest): Promise<KnowledgeNode[]> {
+  return sendRuntimeMessage<KnowledgeNode[]>({
+    type: "listDingtalkNodes",
+    settings: request.settings,
+    parentNodeId: request.parentNodeId
+  });
+}
+
+export async function uploadCurrentPdf(filename: string): Promise<DingtalkUploadResult> {
+  return sendRuntimeMessage<DingtalkUploadResult>({
+    type: "uploadActivePdf",
+    filename
+  });
 }

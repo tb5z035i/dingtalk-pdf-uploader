@@ -9,18 +9,58 @@
   <body>
     <main class="page">
       <h1>PDF to DingTalk settings</h1>
+      <section class="panel">
+        <h2>Credentials</h2>
+        <p class="muted">These values are stored locally in this extension profile. Use this only for private/internal deployment.</p>
+      </section>
       <label class="field">
-        <span>Backend URL</span>
-        <input id="backend-url" type="url" placeholder="http://localhost:8787" />
+        <span>App ID (optional)</span>
+        <input id="app-id" type="text" placeholder="Optional app identifier" />
       </label>
-      <div class="actions">
-        <button id="load-button" type="button">Load workspaces</button>
-      </div>
+      <label class="field">
+        <span>Corp ID (optional, preferred for modern token endpoint)</span>
+        <input id="corp-id" type="text" placeholder="corpId if available" />
+      </label>
+      <label class="field">
+        <span>App Key / Client ID</span>
+        <input id="client-id" type="text" placeholder="dingxxxxxxxx" />
+      </label>
+      <label class="field">
+        <span>App Secret / Client Secret</span>
+        <input id="client-secret" type="password" placeholder="Paste the app secret" />
+      </label>
+      <label class="field">
+        <span>Operator unionId</span>
+        <input id="operator-id" type="text" placeholder="Operator unionId used for workspace actions" />
+      </label>
 
+      <section class="panel">
+        <h2>Advanced API settings</h2>
+        <label class="field">
+          <span>API base URL</span>
+          <input id="api-base-url" type="url" placeholder="https://api.dingtalk.com" />
+        </label>
+        <label class="field">
+          <span>OAPI base URL</span>
+          <input id="oapi-base-url" type="url" placeholder="https://oapi.dingtalk.com" />
+        </label>
+        <label class="field">
+          <span>Create node path</span>
+          <input id="create-node-path" type="text" placeholder="/v2.0/wiki/nodes" />
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Destination</h2>
+        <p class="muted">Load workspaces directly from DingTalk, then browse to the folder that should receive uploaded PDFs.</p>
+      </section>
       <label class="field">
         <span>Knowledge base</span>
         <select id="workspace-select"></select>
       </label>
+      <div class="actions">
+        <button id="load-button" type="button">Authenticate &amp; load workspaces</button>
+      </div>
 
       <section class="panel">
         <h2>Folder browser</h2>
@@ -33,7 +73,7 @@
 
       <div id="status" class="status" data-tone="neutral"></div>
       <div class="actions">
-        <button id="save-button" type="button">Save settings</button>
+        <button id="save-button" type="button">Save credentials &amp; destination</button>
       </div>
     </main>
     <script type="module" src="./options/index.js"></script>

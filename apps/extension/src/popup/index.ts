@@ -1,4 +1,5 @@
-import { getSettings } from "../lib/storage.js";
+import { uploadCurrentPdf as requestPdfUpload } from "../lib/api.js";
+import { getSettings, hasSavedCredentials, hasSavedDestination } from "../lib/storage.js";
 import type { ActivePdfContext } from "../lib/types.js";
 
 const statusEl = document.querySelector<HTMLDivElement>("#status");
@@ -47,9 +48,9 @@ async function renderDestination() {
     ? `
         <p><strong>Knowledge base:</strong> ${settings.workspaceName || settings.workspaceId}</p>
         <p><strong>Folder:</strong> ${settings.parentNodeName || settings.parentNodeId}</p>
-        <p class="muted">${settings.backendBaseUrl}</p>
+        <p class="muted">Operator: ${settings.operatorId || "not set"}</p>
       `
-    : `<p class="muted">Set the backend URL and destination folder in Options before uploading.</p>`;
+    : `<p class="muted">Set your DingTalk credentials and destination folder in Options before uploading.</p>`;
 }
 
 async function requestActivePdfContext(): Promise<ActivePdfContext> {
@@ -58,16 +59,8 @@ async function requestActivePdfContext(): Promise<ActivePdfContext> {
 
 async function uploadCurrentPdf() {
   setStatus("Uploading PDF to DingTalk…");
-  const payload = await chrome.runtime.sendMessage({
-    type: "uploadActivePdf",
-    filename: filenameInput?.value.trim()
-  }) as { ok: boolean; payload?: { item?: { name: string } }; message?: string };
-
-  if (!payload.ok) {
-    throw new Error(payload.message ?? "Upload failed.");
-  }
-
-  setStatus(`Uploaded ${payload.payload?.item?.name ?? "PDF"} successfully.`, "success");
+  const payload = await requestPdfUpload(filenameInput?.value.trim() || "document.pdf");
+  setStatus(`Uploaded ${payload.name} successfully.`, "success");
 }
 
 async function init() {
@@ -83,9 +76,21 @@ async function init() {
     }
   });
 
+  const settings = await getSettings();
   await renderDestination();
   const context = await requestActivePdfContext();
   renderPdfContext(context);
+
+  if (!hasSavedCredentials(settings)) {
+    setStatus("Open Options and save your DingTalk credentials first.", "error");
+    return;
+  }
+
+  if (!hasSavedDestination(settings)) {
+    setStatus("Open Options and save your target knowledge base folder first.", "error");
+    return;
+  }
+
   setStatus(
     context.isPdf
       ? "Ready to upload the current PDF."

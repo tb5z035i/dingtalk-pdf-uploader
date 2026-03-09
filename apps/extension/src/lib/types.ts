@@ -1,9 +1,22 @@
 export interface ExtensionSettings {
-  backendBaseUrl: string;
+  appId: string;
+  corpId: string;
+  clientId: string;
+  clientSecret: string;
+  operatorId: string;
   workspaceId: string;
   workspaceName: string;
   parentNodeId: string;
   parentNodeName: string;
+  apiBaseUrl: string;
+  oapiBaseUrl: string;
+  createNodePath: string;
+}
+
+export interface TokenCache {
+  accessToken: string;
+  expiresAt: number;
+  strategy: "modern" | "legacy";
 }
 
 export interface WorkspaceSummary {
@@ -45,6 +58,30 @@ export interface UploadResponse {
   message?: string;
 }
 
-export interface ApiListResponse<T> {
-  items: T[];
+export interface DingtalkCredentialDraft {
+  appId: string;
+  corpId: string;
+  clientId: string;
+  clientSecret: string;
+  operatorId: string;
+  apiBaseUrl: string;
+  oapiBaseUrl: string;
+  createNodePath: string;
+}
+
+export interface DingtalkDraftRequest {
+  settings: DingtalkCredentialDraft;
+}
+
+export interface DingtalkNodeRequest extends DingtalkDraftRequest {
+  parentNodeId: string;
+}
+
+export interface DingtalkUploadResult {
+  workspaceId: string;
+  parentNodeId: string;
+  nodeId: string;
+  name: string;
+  mediaId?: string;
+  uploadedAt: string;
 }

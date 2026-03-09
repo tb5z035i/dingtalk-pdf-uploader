@@ -1,8 +1,15 @@
 import { fetchNodes, fetchWorkspaces } from "../lib/api.js";
 import { DEFAULT_SETTINGS, getSettings, saveSettings } from "../lib/storage.js";
-import type { KnowledgeNode, WorkspaceSummary } from "../lib/types.js";
+import type { DingtalkCredentialDraft, KnowledgeNode, WorkspaceSummary } from "../lib/types.js";
 
-const backendInput = document.querySelector<HTMLInputElement>("#backend-url");
+const appIdInput = document.querySelector<HTMLInputElement>("#app-id");
+const corpIdInput = document.querySelector<HTMLInputElement>("#corp-id");
+const clientIdInput = document.querySelector<HTMLInputElement>("#client-id");
+const clientSecretInput = document.querySelector<HTMLInputElement>("#client-secret");
+const operatorIdInput = document.querySelector<HTMLInputElement>("#operator-id");
+const apiBaseUrlInput = document.querySelector<HTMLInputElement>("#api-base-url");
+const oapiBaseUrlInput = document.querySelector<HTMLInputElement>("#oapi-base-url");
+const createNodePathInput = document.querySelector<HTMLInputElement>("#create-node-path");
 const workspaceSelect = document.querySelector<HTMLSelectElement>("#workspace-select");
 const currentFolderEl = document.querySelector<HTMLDivElement>("#current-folder");
 const folderListEl = document.querySelector<HTMLUListElement>("#folder-list");
@@ -14,6 +21,19 @@ const backButton = document.querySelector<HTMLButtonElement>("#back-button");
 let workspaces: WorkspaceSummary[] = [];
 let folderStack: Array<{ nodeId: string; name: string }> = [];
 let selectedFolder: { nodeId: string; name: string } | null = null;
+
+function getDraftSettings(): DingtalkCredentialDraft {
+  return {
+    appId: appIdInput?.value.trim() ?? "",
+    corpId: corpIdInput?.value.trim() ?? "",
+    clientId: clientIdInput?.value.trim() ?? "",
+    clientSecret: clientSecretInput?.value.trim() ?? "",
+    operatorId: operatorIdInput?.value.trim() ?? "",
+    apiBaseUrl: apiBaseUrlInput?.value.trim() || DEFAULT_SETTINGS.apiBaseUrl,
+    oapiBaseUrl: oapiBaseUrlInput?.value.trim() || DEFAULT_SETTINGS.oapiBaseUrl,
+    createNodePath: createNodePathInput?.value.trim() || DEFAULT_SETTINGS.createNodePath
+  };
+}
 
 function setStatus(message: string, tone: "neutral" | "success" | "error" = "neutral") {
   if (!statusEl) {
@@ -39,11 +59,14 @@ function renderFolderPath() {
 }
 
 async function loadFolders(parentNodeId: string) {
-  if (!backendInput?.value || !folderListEl) {
+  if (!folderListEl) {
     return;
   }
 
-  const nodes = await fetchNodes(backendInput.value.trim(), parentNodeId);
+  const nodes = await fetchNodes({
+    settings: getDraftSettings(),
+    parentNodeId
+  });
   const folders = nodes.filter((node) => node.nodeType === "folder");
   renderFolderList(folders);
 }
@@ -94,14 +117,19 @@ async function loadWorkspaceTree(workspaceId: string, restoreNodeId?: string, re
 
 async function init() {
   const settings = await getSettings();
-  if (backendInput) {
-    backendInput.value = settings.backendBaseUrl || DEFAULT_SETTINGS.backendBaseUrl;
-  }
+  if (appIdInput) appIdInput.value = settings.appId;
+  if (corpIdInput) corpIdInput.value = settings.corpId;
+  if (clientIdInput) clientIdInput.value = settings.clientId;
+  if (clientSecretInput) clientSecretInput.value = settings.clientSecret;
+  if (operatorIdInput) operatorIdInput.value = settings.operatorId;
+  if (apiBaseUrlInput) apiBaseUrlInput.value = settings.apiBaseUrl;
+  if (oapiBaseUrlInput) oapiBaseUrlInput.value = settings.oapiBaseUrl;
+  if (createNodePathInput) createNodePathInput.value = settings.createNodePath;
 
   loadButton?.addEventListener("click", async () => {
     try {
-      setStatus("Loading workspaces…");
-      workspaces = await fetchWorkspaces(backendInput?.value.trim() || DEFAULT_SETTINGS.backendBaseUrl);
+      setStatus("Authenticating with DingTalk and loading workspaces…");
+      workspaces = await fetchWorkspaces(getDraftSettings());
       if (!workspaceSelect) {
         return;
       }
@@ -154,19 +182,20 @@ async function init() {
       }
 
       await saveSettings({
-        backendBaseUrl: backendInput?.value.trim() || DEFAULT_SETTINGS.backendBaseUrl,
+        ...DEFAULT_SETTINGS,
+        ...getDraftSettings(),
         workspaceId: workspace.workspaceId,
         workspaceName: workspace.name,
         parentNodeId: selectedFolder.nodeId,
         parentNodeName: selectedFolder.name
       });
-      setStatus("Options saved.", "success");
+      setStatus("Credentials and DingTalk destination saved locally.", "success");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to save options.", "error");
     }
   });
 
-  setStatus("Enter your backend URL, then load workspaces.");
+  setStatus("Enter your DingTalk credentials, then load workspaces.");
 }
 
 void init();
