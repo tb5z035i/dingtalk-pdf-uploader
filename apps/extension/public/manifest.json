@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "PDF to DingTalk Knowledge Base",
+  "description": "Upload the current PDF tab into a configured DingTalk team knowledge-base folder.",
+  "version": "0.1.0",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "file://*/*"
+  ],
+  "background": {
+    "service_worker": "background/index.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Upload current PDF to DingTalk",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}

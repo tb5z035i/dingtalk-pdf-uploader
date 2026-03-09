@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF to DingTalk</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="popup">
+    <main class="card">
+      <h1>Upload current PDF</h1>
+      <section>
+        <h2>Current PDF</h2>
+        <div id="pdf-details" class="panel"></div>
+      </section>
+      <section>
+        <h2>Destination</h2>
+        <div id="destination" class="panel"></div>
+      </section>
+      <label class="field">
+        <span>Filename</span>
+        <input id="filename" type="text" />
+      </label>
+      <div id="status" class="status" data-tone="neutral"></div>
+      <div class="actions">
+        <button id="open-options-button" type="button" class="secondary">Options</button>
+        <button id="upload-button" type="button">Upload</button>
+      </div>
+    </main>
+    <script type="module" src="./popup/index.js"></script>
+  </body>
+</html>
