@@ -1,6 +1,6 @@
 # dingtalk-pdf-uploader
 
-A Chrome extension plus a small backend that lets you upload the **current PDF tab** into a configured folder inside a **DingTalk team knowledge base**.
+A frontend-only Chrome extension that uploads the **current PDF tab** into a configured folder inside a **DingTalk team knowledge base**.
 
 ## What is implemented
 
@@ -17,34 +17,23 @@ A Chrome extension plus a small backend that lets you upload the **current PDF t
 - Popup UI for:
   - showing the current PDF
   - overriding the upload filename
-  - uploading to the configured DingTalk destination
+  - uploading directly into DingTalk
 - Options page for:
-  - backend URL
-  - loading knowledge bases
-  - browsing folders
-  - saving the target destination
-
-### Backend
-
-- Express server with:
-  - `GET /health`
-  - `GET /api/workspaces`
-  - `GET /api/nodes?parentNodeId=...`
-  - `POST /api/upload`
-- Mock DingTalk mode for local development and testing
-- Real DingTalk mode with:
-  - app-token retrieval
-  - workspace listing
-  - node listing
-  - PDF media upload
-  - configurable knowledge-base node creation path
+  - storing DingTalk credentials locally
+  - loading knowledge bases directly from DingTalk
+  - browsing folders directly from DingTalk
+  - saving the target destination locally
+- Background service worker for:
+  - DingTalk token acquisition
+  - workspace and folder listing
+  - direct media upload
+  - knowledge-base node creation
 
 ## Repository layout
 
 ```text
 apps/
   extension/  # Chrome extension (MV3)
-  server/     # backend API and DingTalk integration
 ```
 
 ## Quick start
@@ -55,25 +44,13 @@ apps/
 npm install
 ```
 
-### 2) Build everything
+### 2) Build the extension
 
 ```bash
 npm run build
 ```
 
-### 3) Start the backend in local mock mode
-
-```bash
-PORT=8787 DINGTALK_MOCK_MODE=true npm run start --workspace @dingtalk-pdf-uploader/server
-```
-
-The backend will be available at:
-
-```text
-http://localhost:8787
-```
-
-### 4) Load the extension in Chrome
+### 3) Load the extension in Chrome
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
@@ -84,21 +61,20 @@ http://localhost:8787
 apps/extension/dist
 ```
 
-### 5) Configure the extension
+### 4) Configure the extension
 
 1. Open the extension's **Options**
-2. Set backend URL to:
+2. Fill in:
+   - **App Key / Client ID**
+   - **App Secret / Client Secret**
+   - **Operator unionId**
+   - optionally **Corp ID**
+3. Click **Authenticate & load workspaces**
+4. Choose the target knowledge base
+5. Browse to the target folder
+6. Click **Save credentials & destination**
 
-```text
-http://localhost:8787
-```
-
-3. Click **Load workspaces**
-4. Choose the knowledge base
-5. Browse to the desired folder
-6. Click **Save settings**
-
-### 6) Upload a PDF
+### 5) Upload a PDF
 
 1. Open a PDF in Chrome
 2. Click the extension icon
@@ -115,79 +91,40 @@ For `file://` PDFs, Chrome requires a manual permission toggle:
 
 Without that toggle, local PDFs cannot be read by the extension.
 
-## Mock vs real DingTalk mode
+## DingTalk credential fields
 
-## Mock mode
+The extension stores these values locally in the browser profile:
 
-Mock mode is the default development path and does **not** require real DingTalk credentials.
+- **App ID**: optional metadata field
+- **Corp ID**: optional but preferred for the newer token endpoint
+- **App Key / Client ID**
+- **App Secret / Client Secret**
+- **Operator unionId**
+- **API base URL**: defaults to `https://api.dingtalk.com`
+- **OAPI base URL**: defaults to `https://oapi.dingtalk.com`
+- **Create node path**: defaults to `/v2.0/wiki/nodes`
 
-Use:
-
-```bash
-DINGTALK_MOCK_MODE=true
-```
-
-This mode returns a demo knowledge base and accepts PDF uploads locally, which makes it suitable for:
-
-- extension development
-- backend validation
-- CI and automated tests
-
-## Real DingTalk mode
-
-Set:
-
-```bash
-DINGTALK_MOCK_MODE=false
-```
-
-Then configure the backend with the variables shown in `apps/server/.env.example`.
-
-### Real-mode notes
-
-- DingTalk app credentials stay on the backend only.
-- The backend expects a fixed `DINGTALK_OPERATOR_ID` / unionId for MVP.
-- The current real upload implementation follows this shape:
-  1. fetch app access token
-  2. upload PDF to DingTalk media API
-  3. create a knowledge-base node using a configurable node-create path
-
-Because DingTalk's documentation around **PDF/file-node insertion into a knowledge base** is less explicit than the list APIs, the final node-create endpoint is configurable through:
+The extension first tries the newer token endpoint:
 
 ```text
-DINGTALK_CREATE_NODE_PATH
+POST /v1.0/oauth2/{corpId}/token
 ```
 
-Default:
+If Corp ID is unavailable or that flow fails, it falls back to:
 
 ```text
-/v2.0/wiki/nodes
+POST /v1.0/oauth2/accessToken
 ```
 
-If your DingTalk tenant or official API flow requires a different endpoint, adjust this environment variable instead of changing extension code.
+## Required DingTalk permissions
 
-## Environment variables
+Make sure the DingTalk app has access to:
 
-See:
-
-```text
-apps/server/.env.example
-```
-
-Key variables:
-
-- `PORT`
-- `MAX_UPLOAD_BYTES`
-- `BACKEND_ALLOWED_ORIGINS`
-- `DINGTALK_MOCK_MODE`
-- `DEFAULT_WORKSPACE_ID`
-- `DEFAULT_PARENT_NODE_ID`
-- `DINGTALK_APP_KEY`
-- `DINGTALK_APP_SECRET`
-- `DINGTALK_OPERATOR_ID`
-- `DINGTALK_API_BASE_URL`
-- `DINGTALK_OAPI_BASE_URL`
-- `DINGTALK_CREATE_NODE_PATH`
+- knowledge base read
+- knowledge base node / folder read
+- knowledge base write / node create
+- media / file upload
+- any user/contact permission needed to identify the operator unionId
 
 ## Scripts
 
@@ -199,37 +136,42 @@ npm test
 npm run typecheck
 ```
 
-### Backend only
-
-```bash
-npm run dev --workspace @dingtalk-pdf-uploader/server
-npm run start --workspace @dingtalk-pdf-uploader/server
-```
-
 ### Extension only
 
 ```bash
 npm run build --workspace @dingtalk-pdf-uploader/extension
 npm run test --workspace @dingtalk-pdf-uploader/extension
+npm run typecheck --workspace @dingtalk-pdf-uploader/extension
 ```
 
 ## Testing
 
 Automated test coverage includes:
 
-- backend request validation
-- backend token caching
-- filename normalization
 - extension PDF URL detection
 - extension Chrome PDF viewer source extraction
+- extension credential storage
+- DingTalk token request shaping and fallback logic
+- DingTalk workspace / folder request shaping
+- DingTalk media upload request shaping
+- filename normalization
 
 Recommended manual verification:
 
-1. start the backend in mock mode
-2. load the unpacked extension
-3. configure the destination in Options
-4. open:
+1. load the unpacked extension
+2. configure credentials and destination in Options
+3. open:
    - a direct `.pdf` URL
    - a PDF shown inside Chrome's built-in viewer
    - a local `file://` PDF
-5. verify popup detection and upload behavior
+4. verify popup detection and direct DingTalk upload behavior
+
+## Security note
+
+This extension stores DingTalk app credentials locally in the extension's storage area. That is acceptable only for:
+
+- private/internal use
+- trusted machines
+- controlled distribution
+
+Do **not** publish this architecture as a public extension if you are not comfortable with the client-side exposure risk of the app secret.
